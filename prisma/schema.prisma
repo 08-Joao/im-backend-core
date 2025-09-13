@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String     @id @default(uuid())
+  name         String
+  email        String     @unique
+  password     String
+  phoneNumber  String     @unique
+  birthDate    DateTime
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  ownedHouses  House[]    @relation("OwnedHouses")
+  housesRented House[]    @relation("RentedHouses")
+  documents    Document[]
+  role         Role
+}
+
+enum Role {
+  ROOT
+  ADMIN
+  USER
+}
+
+model House {
+  id            String    @id @default(uuid())
+  houseType     HouseType
+  description   String
+  street        String
+  number        Int
+  complement    String?
+  neighborhood  String
+  city          String
+  state         String
+  zipCode       String
+  price         Float
+  area          Float
+  bedrooms      Int
+  bathrooms     Int
+  parkingSpaces Int
+  petsAllowed   Boolean
+  isFurnished   Boolean
+  isRent        Boolean
+  isAvailable   Boolean
+
+  documents Document[]
+
+  // Static link for files
+  photos String[]
+  videos String[]
+
+  // Foreign key fields
+  ownerId  String
+  renterId String?
+
+  // Relations
+  owner  User  @relation("OwnedHouses", fields: [ownerId], references: [id])
+  renter User? @relation("RentedHouses", fields: [renterId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum HouseType {
+  APARTAMENTO
+  CASA
+  CHACARA
+  FAZENDA
+  SITIO
+  TERRENO
+}
+
+model Document {
+  id       String       @id @default(uuid())
+  name     String // Original filename
+  type     DocumentType
+  url      String // File storage URL (S3, Cloudinary, etc.)
+  size     Int? // File size in bytes
+  mimeType String? // MIME type (image/jpeg, application/pdf, etc.)
+
+  // Relations - a document can belong to either a user OR a house
+  userId  String?
+  houseId String?
+  user    User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  house   House?  @relation(fields: [houseId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Ensure a document belongs to either a user or a house, not both
+  @@unique([userId, houseId])
+}
+
+enum DocumentType {
+  // User documents
+  CPF
+  RG
+  CNH
+  COMPROVANTE_RENDA
+
+  // House documents
+  ESCRITURA
+  IPTU
+  PLANTA
+  CONTRATO_ALUGUEL
+
+  // Generic
+  OUTROS
+}
