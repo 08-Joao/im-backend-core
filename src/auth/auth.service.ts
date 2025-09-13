@@ -7,9 +7,7 @@ import { UserService } from 'src/user/user.service';
 export class AuthService {
     constructor(private userService: UserService) {}
     async signup(data: CreateUserDto) {
-        const user = await this.userService.findByEmail(data.email);
-
-        return 'signup'
+        return this.userService.create(data);
     }
 
     async signin(data: SignInInputDto){
